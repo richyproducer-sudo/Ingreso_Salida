@@ -7,7 +7,7 @@
     "dev": "concurrently -k -n SERVER,CLIENT -c green,cyan \"npm:dev --prefix server\" \"npm:dev --prefix client\"",
     "install:all": "npm install --prefix server && npm install --prefix client",
     "download:models": "node scripts/download-models.js",
-    "build": "npm install --prefix server && npm install --prefix client && npm run build --prefix client",
+    "build": "npm install --prefix server && npm install --prefix client --include=dev && npm run build --prefix client",
     "start": "npm start --prefix server"
   },
   "devDependencies": {
