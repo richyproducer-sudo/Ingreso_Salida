@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .claude/
+client/.cert/
 server/data/*.db
 server/data/*.db-shm
 server/data/*.db-wal

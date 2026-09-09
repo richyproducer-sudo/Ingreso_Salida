@@ -85,7 +85,7 @@ export default function DashboardHome() {
           {loading && <p className="py-4 text-sm text-slate-500">Cargando…</p>}
           {!loading && today.length === 0 && <p className="py-4 text-sm text-slate-500">Sin marcajes hoy todavía.</p>}
           {today.slice(0, 8).map((r) => (
-            <div key={r.id} className="flex items-center justify-between py-3 text-sm">
+            <div key={r.id} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 py-3 text-sm">
               <span className="font-medium">{r.employee_name}</span>
               <span className="text-slate-400">{TYPE_LABEL[r.type]}</span>
               <span className="font-mono-tech text-slate-500">

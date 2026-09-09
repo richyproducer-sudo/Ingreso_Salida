@@ -72,21 +72,21 @@ export default function EmployeesPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Empleados</h1>
           <p className="mt-1 text-sm text-slate-400">Gestiona el personal y su registro de FaceID.</p>
         </div>
         <button
           onClick={openNewForm}
-          className="rounded-lg bg-gradient-to-r from-cyan-400 to-emerald-400 px-4 py-2 text-sm font-medium text-black hover:opacity-90"
+          className="rounded-lg bg-gradient-to-r from-cyan-400 to-emerald-400 px-4 py-2 text-sm font-medium text-black hover:opacity-90 sm:self-auto"
         >
           + Nuevo empleado
         </button>
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-2xl border border-white/10">
-        <table className="w-full text-left text-sm">
+      <div className="mt-6 overflow-x-auto rounded-2xl border border-white/10">
+        <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="bg-white/[0.03] text-xs uppercase tracking-wide text-slate-400">
             <tr>
               <th className="px-4 py-3">Nombre</th>

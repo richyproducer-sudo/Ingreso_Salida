@@ -154,12 +154,13 @@ export default function KioskPage() {
 
       <Link
         to="/admin/login"
-        className="absolute right-4 top-4 z-20 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs text-slate-400 backdrop-blur transition hover:border-cyan-400/40 hover:text-cyan-300"
+        className="absolute right-3 top-3 z-20 rounded-full border border-white/10 bg-white/5 px-3 py-1.5 text-[10px] text-slate-400 backdrop-blur transition hover:border-cyan-400/40 hover:text-cyan-300 sm:right-4 sm:top-4 sm:px-4 sm:py-2 sm:text-xs"
       >
-        Acceso Administrador
+        <span className="sm:hidden">Admin</span>
+        <span className="hidden sm:inline">Acceso Administrador</span>
       </Link>
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center gap-8 px-4 py-10">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-5xl flex-col items-center justify-center gap-6 px-4 py-16 sm:gap-8 sm:py-10">
         <div className="text-center">
           <p className="font-mono-tech text-xs uppercase tracking-[0.4em] text-cyan-400/80">
             Sistema de Control de Asistencia · FaceID
@@ -235,15 +236,15 @@ export default function KioskPage() {
           </div>
         </div>
 
-        <div className="text-center">
-          <p className="font-mono-tech text-sm text-slate-400">
+        <div className="px-2 text-center">
+          <p className="font-mono-tech text-xs text-slate-400 sm:text-sm">
             {ready
               ? faceCount
                 ? 'Rostro detectado — verificando identidad…'
                 : 'Colócate frente a la cámara para marcar tu horario'
               : 'Preparando cámara…'}
           </p>
-          <div className="mt-3 flex justify-center gap-4 text-xs text-slate-500">
+          <div className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1.5 text-[11px] text-slate-500 sm:gap-x-4 sm:text-xs">
             <span>🟢 Ingreso</span>
             <span>🍽️ Salida almuerzo</span>
             <span>↩️ Regreso almuerzo</span>

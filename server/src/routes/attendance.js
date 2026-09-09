@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { db } from '../db.js';
+import { pool } from '../db.js';
 import { requireAuth, requireAdmin } from '../middleware/auth.js';
 
 const router = Router();
@@ -19,34 +19,43 @@ const LABELS = {
   checkout: 'Salida',
 };
 
-function todayLastType(employeeId) {
-  const row = db
-    .prepare(
-      `SELECT type FROM attendance
-       WHERE employee_id = ? AND date(timestamp, 'localtime') = date('now', 'localtime')
-       ORDER BY id DESC LIMIT 1`
-    )
-    .get(employeeId);
-  return row ? row.type : 'none';
+function todayRange() {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const end = new Date(start);
+  end.setDate(end.getDate() + 1);
+  return [start, end];
+}
+
+async function todayLastType(employeeId) {
+  const [start, end] = todayRange();
+  const { rows } = await pool.query(
+    `SELECT type FROM attendance WHERE employee_id = $1 AND timestamp >= $2 AND timestamp < $3 ORDER BY id DESC LIMIT 1`,
+    [employeeId, start, end]
+  );
+  return rows[0]?.type || 'none';
 }
 
 // Registra el siguiente marcaje logico del dia para el empleado (usado por el kiosco de FaceID)
-router.post('/punch', (req, res) => {
+router.post('/punch', async (req, res) => {
   const { employeeId, method } = req.body || {};
-  const employee = db.prepare(`SELECT id, name FROM employees WHERE id = ? AND active = 1`).get(employeeId);
+  const { rows: empRows } = await pool.query(`SELECT id, name FROM employees WHERE id = $1 AND active = true`, [
+    employeeId,
+  ]);
+  const employee = empRows[0];
   if (!employee) return res.status(404).json({ error: 'Empleado no encontrado' });
 
-  const last = todayLastType(employeeId);
+  const last = await todayLastType(employeeId);
   const nextType = NEXT_TYPE[last];
   if (!nextType) {
     return res.status(409).json({ error: 'Ya completaste todos los marcajes de hoy', done: true });
   }
 
-  db.prepare(`INSERT INTO attendance (employee_id, type, method) VALUES (?, ?, ?)`).run(
+  await pool.query(`INSERT INTO attendance (employee_id, type, method) VALUES ($1, $2, $3)`, [
     employeeId,
     nextType,
-    method || 'face'
-  );
+    method || 'face',
+  ]);
 
   res.status(201).json({
     employee: employee.name,
@@ -58,43 +67,46 @@ router.post('/punch', (req, res) => {
 
 router.use(requireAuth, requireAdmin);
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   const { employeeId, from, to } = req.query;
-  let query = `
+  let sql = `
     SELECT a.id, a.employee_id, e.name AS employee_name, a.type, a.timestamp, a.method
     FROM attendance a JOIN employees e ON e.id = a.employee_id
     WHERE 1=1`;
   const params = [];
   if (employeeId) {
-    query += ` AND a.employee_id = ?`;
     params.push(employeeId);
+    sql += ` AND a.employee_id = $${params.length}`;
   }
   if (from) {
-    query += ` AND date(a.timestamp, 'localtime') >= date(?)`;
-    params.push(from);
+    params.push(new Date(`${from}T00:00:00`));
+    sql += ` AND a.timestamp >= $${params.length}`;
   }
   if (to) {
-    query += ` AND date(a.timestamp, 'localtime') <= date(?)`;
-    params.push(to);
+    const toDate = new Date(`${to}T00:00:00`);
+    toDate.setDate(toDate.getDate() + 1);
+    params.push(toDate);
+    sql += ` AND a.timestamp < $${params.length}`;
   }
-  query += ` ORDER BY a.timestamp DESC LIMIT 1000`;
-  res.json(db.prepare(query).all(...params));
-});
-
-router.get('/today', (req, res) => {
-  const rows = db
-    .prepare(
-      `SELECT a.id, a.employee_id, e.name AS employee_name, a.type, a.timestamp
-       FROM attendance a JOIN employees e ON e.id = a.employee_id
-       WHERE date(a.timestamp, 'localtime') = date('now', 'localtime')
-       ORDER BY a.timestamp DESC`
-    )
-    .all();
+  sql += ` ORDER BY a.timestamp DESC LIMIT 1000`;
+  const { rows } = await pool.query(sql, params);
   res.json(rows);
 });
 
-router.delete('/:id', (req, res) => {
-  db.prepare(`DELETE FROM attendance WHERE id = ?`).run(req.params.id);
+router.get('/today', async (req, res) => {
+  const [start, end] = todayRange();
+  const { rows } = await pool.query(
+    `SELECT a.id, a.employee_id, e.name AS employee_name, a.type, a.timestamp
+     FROM attendance a JOIN employees e ON e.id = a.employee_id
+     WHERE a.timestamp >= $1 AND a.timestamp < $2
+     ORDER BY a.timestamp DESC`,
+    [start, end]
+  );
+  res.json(rows);
+});
+
+router.delete('/:id', async (req, res) => {
+  await pool.query(`DELETE FROM attendance WHERE id = $1`, [req.params.id]);
   res.json({ ok: true });
 });
 

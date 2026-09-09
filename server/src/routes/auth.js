@@ -1,15 +1,16 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
-import { db } from '../db.js';
+import { pool } from '../db.js';
 import { signToken } from '../middleware/auth.js';
 
 const router = Router();
 
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ error: 'Email y contrasena requeridos' });
 
-  const user = db.prepare(`SELECT * FROM employees WHERE email = ? AND active = 1`).get(email);
+  const { rows } = await pool.query(`SELECT * FROM employees WHERE email = $1 AND active = true`, [email]);
+  const user = rows[0];
   if (!user || !user.password_hash) return res.status(401).json({ error: 'Credenciales invalidas' });
 
   const ok = bcrypt.compareSync(password, user.password_hash);
